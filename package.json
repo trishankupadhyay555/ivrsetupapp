@@ -1,7 +1,7 @@
 {
-  "name": "webrtc-signaling-server",
+  "name": "ivrsetupapp",
   "version": "1.0.0",
-  "description": "Simple Signaling Server for Laptop-Phone calling",
+  "description": "Signaling server for WebRTC",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -1,8 +1,11 @@
-const io = require("socket.io")(3000, {
+// Render automatically assigns a port in process.env.PORT
+const PORT = process.env.PORT || 3000;
+
+const io = require("socket.io")(PORT, {
   cors: { origin: "*" }
 });
 
-console.log("Signaling Server running on port 3000");
+console.log(`Signaling Server running on port ${PORT}`);
 
 // Rooms: 'laptop' and 'android'
 io.on("connection", (socket) => {

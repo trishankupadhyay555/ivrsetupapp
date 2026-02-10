@@ -1,7 +1,16 @@
-// Render automatically assigns a port in process.env.PORT
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+
 const PORT = process.env.PORT || 3000;
 
-const io = require("socket.io")(PORT, {
+// 1. HTTP Server banaya (Browser ko dikhane ke liye)
+const httpServer = createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("✅ Signaling Server is Running & Ready!");
+});
+
+// 2. Socket Server banaya (Calls connect karne ke liye)
+const io = new Server(httpServer, {
   cors: { origin: "*" }
 });
 
@@ -23,9 +32,11 @@ io.on("connection", (socket) => {
 
   // WebRTC Signaling Data Exchange (Offer/Answer/ICE)
   socket.on("signal", (data) => {
-    // Agar sender laptop hai toh android ko bhejo, vice versa
     const target = data.target === "laptop" ? "laptop" : "android";
     io.to(target).emit("signal", data);
   });
 
 });
+
+// 3. Server start kiya
+httpServer.listen(PORT);

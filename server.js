@@ -1,42 +1,30 @@
-const { createServer } = require("http");
-const { Server } = require("socket.io");
+const express = require('express');
+const WebSocket = require('ws');
+const path = require('path');
 
-const PORT = process.env.PORT || 3000;
+const app = express();
+app.use(express.static('audio')); // serve mp3 files
+app.use(require('cors')());
 
-// 1. HTTP Server banaya (Browser ko dikhane ke liye)
-const httpServer = createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("✅ Signaling Server is Running & Ready!");
-});
+const wss = new WebSocket.Server({ port: 3000 });
 
-// 2. Socket Server banaya (Calls connect karne ke liye)
-const io = new Server(httpServer, {
-  cors: { origin: "*" }
-});
+const sessions = new Map();
 
-console.log(`Signaling Server running on port ${PORT}`);
+wss.on('connection', (ws) => {
+  const sessionId = Date.now().toString();
+  sessions.set(sessionId, ws);
+  console.log(`New session: ${sessionId}`);
 
-// Rooms: 'laptop' and 'android'
-io.on("connection", (socket) => {
-  
-  socket.on("join", (role) => {
-    socket.join(role);
-    console.log(`${role} joined with ID: ${socket.id}`);
+  ws.on('message', (msg) => {
+    const data = JSON.parse(msg);
+    if (data.type === 'dtmf') {
+      console.log(`DTMF received: ${data.digit} from ${sessionId}`);
+      // Map digit to audio (1→option1.mp3)
+      ws.send(`PLAY:${data.digit}`);
+    }
   });
 
-  // Laptop calls Android
-  socket.on("call-initiate", (data) => {
-    console.log("Laptop is calling Android...");
-    io.to("android").emit("incoming-call", data);
-  });
-
-  // WebRTC Signaling Data Exchange (Offer/Answer/ICE)
-  socket.on("signal", (data) => {
-    const target = data.target === "laptop" ? "laptop" : "android";
-    io.to(target).emit("signal", data);
-  });
-
+  ws.on('close', () => sessions.delete(sessionId));
 });
 
-// 3. Server start kiya
-httpServer.listen(PORT);
+app.listen(3000, () => console.log('Backend running on port 3000 - FREE on Render'));
